@@ -84,7 +84,7 @@ papers.forEach(paper => {
 
 // 🎵 Auto-play music on first click
 document.addEventListener("click", function () {
-  let music = document.getElementById("background-music");
+  let music = document.getElementById("bdayMusic");
   if (music.paused) {
     music.play();
   }
