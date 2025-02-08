@@ -4,8 +4,6 @@ class Paper {
   holdingPaper = false;
   touchStartX = 0;
   touchStartY = 0;
-  touchMoveX = 0;
-  touchMoveY = 0;
   prevTouchX = 0;
   prevTouchY = 0;
   velX = 0;
@@ -17,61 +15,47 @@ class Paper {
 
   init(paper) {
     paper.addEventListener('touchstart', (e) => {
-      if (e.touches.length === 2) {
-        this.rotating = true;
-      } else {
-        this.holdingPaper = true;
-        this.rotating = false;
-        paper.style.zIndex = highestZ++;
-        this.touchStartX = e.touches[0].clientX;
-        this.touchStartY = e.touches[0].clientY;
-        this.prevTouchX = this.touchStartX;
-        this.prevTouchY = this.touchStartY;
-      }
+      if (this.holdingPaper) return;  
+      this.holdingPaper = true;
+      paper.style.zIndex = highestZ++;
+      
+      this.touchStartX = e.touches[0].clientX;
+      this.touchStartY = e.touches[0].clientY;
+      this.prevTouchX = this.touchStartX;
+      this.prevTouchY = this.touchStartY;
     });
 
     paper.addEventListener('touchmove', (e) => {
+      e.preventDefault();
       if (!this.holdingPaper) return;
 
-      this.touchMoveX = e.touches[0].clientX;
-      this.touchMoveY = e.touches[0].clientY;
-      this.velX = this.touchMoveX - this.prevTouchX;
-      this.velY = this.touchMoveY - this.prevTouchY;
+      let touch = e.touches[0];
+      let dx = touch.clientX - this.prevTouchX;
+      let dy = touch.clientY - this.prevTouchY;
+      
+      this.currentPaperX += dx;
+      this.currentPaperY += dy;
 
-      if (!this.rotating) {
-        this.currentPaperX += this.velX;
-        this.currentPaperY += this.velY;
-      } else {
-        const dirX = this.touchMoveX - this.touchStartX;
-        const dirY = this.touchMoveY - this.touchStartY;
-        const angle = Math.atan2(dirY, dirX);
-        this.rotation = (360 + Math.round((180 * angle) / Math.PI)) % 360;
-      }
+      this.prevTouchX = touch.clientX;
+      this.prevTouchY = touch.clientY;
 
       paper.style.transform = `translate(${this.currentPaperX}px, ${this.currentPaperY}px) rotate(${this.rotation}deg)`;
-
-      this.prevTouchX = this.touchMoveX;
-      this.prevTouchY = this.touchMoveY;
-    });
+    }, { passive: false });
 
     paper.addEventListener('touchend', () => {
       this.holdingPaper = false;
-      this.rotating = false;
     });
   }
 }
 
-const papers = Array.from(document.querySelectorAll('.paper'));
-
-papers.forEach(paper => {
-  const p = new Paper();
-  p.init(paper);
+// Apply to all papers
+document.querySelectorAll('.paper').forEach(paper => {
+  new Paper().init(paper);
 });
 
-// 🎵 Fix autoplay music issue on mobile
-document.addEventListener("click", function () {
-  let music = document.getElementById("background-music");
-  if (music && music.paused) {
-    music.play().catch(error => console.log("Autoplay blocked:", error));
+// ✅ Prevent page scrolling while dragging papers
+document.addEventListener("touchmove", function (e) {
+  if (e.target.closest(".paper")) {
+    e.preventDefault();
   }
-});
+}, { passive: false });
